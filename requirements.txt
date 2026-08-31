@@ -1,0 +1,4 @@
+# Lo único que hace falta: el SDK oficial de Anthropic.
+# El cliente de Telegram va con la librería estándar (urllib), a propósito:
+# menos dependencias que actualizar en un servidor que no vas a tocar en meses.
+anthropic>=1.2,<2

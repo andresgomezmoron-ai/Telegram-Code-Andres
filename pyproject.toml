@@ -1,0 +1,20 @@
+[project]
+name = "claudegram"
+version = "1.0.0"
+description = "Habla con Claude desde Telegram, también en el avión"
+requires-python = ">=3.10"
+dependencies = ["anthropic>=1.2,<2"]
+
+[project.scripts]
+claudegram = "claudegram.__main__:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["claudegram"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

@@ -1,0 +1,37 @@
+# Copia a /etc/systemd/system/claudegram.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now claudegram
+[Unit]
+Description=Claude por Telegram
+Documentation=https://github.com/andresgomezmoron-ai/Telegram-Code-Andres
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=claudegram
+Group=claudegram
+WorkingDirectory=/opt/claudegram
+EnvironmentFile=/opt/claudegram/.env
+Environment=PYTHONUNBUFFERED=1 PYTHONUTF8=1
+ExecStart=/opt/claudegram/.venv/bin/python -m claudegram
+Restart=always
+RestartSec=5
+# Un long poll puede tardar hasta POLL_TIMEOUT_SECONDS en volver.
+TimeoutStopSec=60
+
+# Cinturón y tirantes: el bot solo necesita leer su código y escribir el estado.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/claudegram/state
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target
