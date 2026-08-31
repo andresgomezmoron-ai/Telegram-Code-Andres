@@ -66,10 +66,19 @@ if [[ "${NEEDS_EDIT:-0}" == "1" ]]; then
 
 Casi está. Ahora:
 
-  1. sudo nano ${DEST}/.env        # token, id de Telegram y clave de Anthropic
+  1. sudo nano ${DEST}/.env
+     Pon TELEGRAM_BOT_TOKEN y ANTHROPIC_API_KEY. Deja de momento
+     TELEGRAM_ALLOWED_USER_IDS como está: lo rellenas en el paso 4.
+
   2. sudo -u ${SERVICE_USER} ${DEST}/.venv/bin/python -m claudegram --check
+     Comprueba token, clave y modelo sin gastar tokens.
+
   3. sudo systemctl start claudegram
-  4. journalctl -u claudegram -f   # ver los logs
+
+  4. Escríbele /id a tu bot en Telegram: te dirá tu número. Ponlo en
+     TELEGRAM_ALLOWED_USER_IDS y: sudo systemctl restart claudegram
+
+  5. journalctl -u claudegram -f   # ver los logs
 
 TXT
 else

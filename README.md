@@ -80,10 +80,18 @@ sudo systemctl daemon-reload && sudo systemctl enable --now claudegram
 ```
 </details>
 
-### ¿Tu id de Telegram?
+### ¿Tu id de Telegram? (huevo y gallina, en dos pasos)
 
-Arranca el bot, escríbele `/id` y te lo dice (ese comando contesta a cualquiera,
-justo para esto). Pon el número en `TELEGRAM_ALLOWED_USER_IDS` y reinicia.
+El bot no arranca sin lista blanca, pero tú todavía no sabes tu número. Se
+resuelve así:
+
+1. Deja `TELEGRAM_ALLOWED_USER_IDS` con el valor de ejemplo y arranca el bot.
+2. Escríbele `/id` por Telegram: ese comando **contesta a cualquiera**, justo
+   para esto, y te da tu número.
+3. Pon ese número en `.env` y `sudo systemctl restart claudegram`.
+
+Desde ese momento, a cualquier otro le dice que el bot es privado y no gasta ni
+un token de tu API.
 
 ### Con Docker
 
