@@ -246,6 +246,38 @@ def load_dotenv_file(path: str | os.PathLike[str] = ".env") -> int:
     return loaded
 
 
+def update_env_file(path: str | os.PathLike[str], values: dict[str, str]) -> None:
+    """Rewrite KEY=VALUE lines in a .env, keeping comments, order and mode.
+
+    Used by the guided setup so nobody has to edit the file by hand with nano
+    on a phone-sized SSH window.
+    """
+    for key, value in values.items():
+        if "\n" in value or "\r" in value:
+            raise ConfigError(f"El valor de {key} no puede tener saltos de línea.")
+
+    file = Path(path)
+    lines = file.read_text(encoding="utf-8").splitlines() if file.is_file() else []
+    pending = dict(values)
+    out: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#") and "=" in stripped:
+            key = stripped.split("=", 1)[0].strip()
+            if key in pending:
+                out.append(f"{key}={pending.pop(key)}")
+                continue
+        out.append(line)
+    for key, value in pending.items():
+        out.append(f"{key}={value}")
+
+    mode = file.stat().st_mode & 0o777 if file.is_file() else 0o600
+    tmp = file.with_name(file.name + ".tmp")
+    tmp.write_text("\n".join(out) + "\n", encoding="utf-8")
+    os.chmod(tmp, mode)
+    os.replace(tmp, file)
+
+
 def _clean(value: str | None) -> str:
     return (value or "").strip()
 

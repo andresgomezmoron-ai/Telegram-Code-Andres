@@ -54,8 +54,6 @@ mkdir -p "${DEST}/state"
 if [[ ! -f "${DEST}/.env" ]]; then
   cp "${DEST}/.env.example" "${DEST}/.env"
   sed -i 's|^CLAUDEGRAM_STATE_DIR=.*|CLAUDEGRAM_STATE_DIR='"${DEST}"'/state|' "${DEST}/.env"
-  echo "==> He creado ${DEST}/.env — EDÍTALO antes de arrancar."
-  NEEDS_EDIT=1
 fi
 chown -R "${SERVICE_USER}:${SERVICE_USER}" "${DEST}"
 chmod 600 "${DEST}/.env"
@@ -66,28 +64,52 @@ sed "s|/opt/claudegram|${DEST}|g; s|User=claudegram|User=${SERVICE_USER}|; s|Gro
 systemctl daemon-reload
 systemctl enable --quiet claudegram
 
-if [[ "${NEEDS_EDIT:-0}" == "1" ]]; then
-  cat <<TXT
+if [[ -t 0 ]]; then
+  # Configuración guiada: pide token y clave, los valida contra las dos APIs
+  # y aprende tu id de Telegram del primer mensaje que le mandes.
+  echo
+  echo "==> Configuración guiada"
+  systemctl stop claudegram >/dev/null 2>&1 || true   # el emparejamiento necesita los mensajes
+  SETUP_OK=1
+  ( cd "${DEST}" && "${DEST}/.venv/bin/python" -m claudegram --setup ) || SETUP_OK=0
+  chown "${SERVICE_USER}:${SERVICE_USER}" "${DEST}/.env"
+  chmod 600 "${DEST}/.env"
 
-Casi está. Ahora:
+  if [[ "${SETUP_OK}" == "1" ]]; then
+    systemctl restart claudegram
+    sleep 2
+    if systemctl is-active --quiet claudegram; then
+      cat <<TXT
 
-  1. sudo nano ${DEST}/.env
-     Pon TELEGRAM_BOT_TOKEN y ANTHROPIC_API_KEY. Deja de momento
-     TELEGRAM_ALLOWED_USER_IDS como está: lo rellenas en el paso 4.
+  ✓ El bot está en marcha. Escríbele por Telegram y te contesta.
 
-  2. sudo -u ${SERVICE_USER} ${DEST}/.venv/bin/python -m claudegram --check
-     Comprueba token, clave y modelo sin gastar tokens.
-
-  3. sudo systemctl start claudegram
-
-  4. Escríbele /id a tu bot en Telegram: te dirá tu número. Ponlo en
-     TELEGRAM_ALLOWED_USER_IDS y: sudo systemctl restart claudegram
-
-  5. journalctl -u claudegram -f   # ver los logs
+  Logs:      journalctl -u claudegram -f
+  Estado:    systemctl status claudegram
 
 TXT
+    else
+      echo
+      echo "  ✗ El servicio no arranca. Mira: journalctl -u claudegram -n 30 --no-pager"
+      exit 1
+    fi
+  else
+    cat <<TXT
+
+  La configuración no ha terminado. Repítela cuando quieras con:
+
+    cd ${DEST} && sudo .venv/bin/python -m claudegram --setup
+    sudo systemctl restart claudegram
+
+TXT
+  fi
 else
-  systemctl restart claudegram
-  echo
-  echo "Actualizado y reiniciado. Logs: journalctl -u claudegram -f"
+  cat <<TXT
+
+  Instalado, pero sin terminal interactiva no puedo pedirte las claves.
+  Termina con:
+
+    cd ${DEST} && sudo .venv/bin/python -m claudegram --setup
+    sudo systemctl restart claudegram
+
+TXT
 fi

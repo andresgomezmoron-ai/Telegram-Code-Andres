@@ -44,26 +44,46 @@ ni nada que necesite internet abierto: si Telegram entra, Claude entra.
 
 ## Instalación en el VPS (Debian/Ubuntu)
 
-Entra por SSH a tu servidor y:
+Entra por SSH y ejecuta estas tres líneas. No hay que editar ningún archivo:
 
 ```bash
+apt update && apt install -y git
 git clone https://github.com/andresgomezmoron-ai/Telegram-Code-Andres.git
-sudo bash Telegram-Code-Andres/deploy/install-vps.sh
+bash Telegram-Code-Andres/deploy/install-vps.sh
 ```
 
-Instala en `/opt/claudegram`, crea un usuario de sistema sin shell, monta el
-entorno virtual y deja el servicio de systemd listo. Después:
+El instalador crea un usuario de sistema sin shell, monta el entorno virtual en
+`/opt/claudegram`, deja el servicio de systemd listo y termina preguntándote
+tres cosas:
+
+1. **El token del bot.** Lo valida contra Telegram al momento: si está mal
+   copiado te lo vuelve a pedir en vez de fallar media hora después.
+2. **La clave de la API de Anthropic.** Igual, la prueba contra la API antes de
+   seguir (sin gastar tokens).
+3. **Quién eres.** Te pide que le escribas al bot desde el móvil y aprende tu id
+   del primer mensaje que le llegue. Ese id queda como único usuario autorizado.
+
+Cuando termina, arranca el servicio y ya puedes escribirle por Telegram.
+
+Si algo se queda a medias, se retoma cuando quieras:
 
 ```bash
-sudo nano /opt/claudegram/.env          # token, tu id y la clave de la API
-sudo -u claudegram /opt/claudegram/.venv/bin/python -m claudegram --check
-sudo systemctl start claudegram
-journalctl -u claudegram -f             # ver los logs
+cd /opt/claudegram
+sudo systemctl stop claudegram          # el emparejamiento necesita los mensajes
+sudo .venv/bin/python -m claudegram --setup
+sudo systemctl restart claudegram
 ```
 
-`--check` comprueba las tres cosas que suelen fallar (token de Telegram, clave
-de Anthropic, modelo disponible) **sin gastar tokens**. Úsalo siempre antes de
-un viaje.
+Y para mirar cómo va:
+
+```bash
+sudo -u claudegram /opt/claudegram/.venv/bin/python -m claudegram --check
+journalctl -u claudegram -f
+systemctl status claudegram
+```
+
+`--check` comprueba token, clave y modelo **sin gastar tokens**. Úsalo siempre
+antes de un viaje.
 
 <details>
 <summary>Paso a paso, si prefieres hacerlo a mano</summary>
@@ -75,29 +95,19 @@ cd /opt/claudegram
 sudo python3 -m venv .venv
 sudo .venv/bin/pip install -r requirements.txt
 sudo cp .env.example .env && sudo chmod 600 .env
-sudo nano .env
+sudo nano .env    # TELEGRAM_BOT_TOKEN, ANTHROPIC_API_KEY y TELEGRAM_ALLOWED_USER_IDS
 sudo cp deploy/claudegram.service /etc/systemd/system/
 sudo systemctl daemon-reload && sudo systemctl enable --now claudegram
 ```
+
+Para saber tu id de Telegram sin el asistente: escríbele `/id` al bot ya
+arrancado. Ese comando responde a cualquiera, precisamente para esto.
 </details>
-
-### ¿Tu id de Telegram? (huevo y gallina, en dos pasos)
-
-El bot no arranca sin lista blanca, pero tú todavía no sabes tu número. Se
-resuelve así:
-
-1. Deja `TELEGRAM_ALLOWED_USER_IDS` con el valor de ejemplo y arranca el bot.
-2. Escríbele `/id` por Telegram: ese comando **contesta a cualquiera**, justo
-   para esto, y te da tu número.
-3. Pon ese número en `.env` y `sudo systemctl restart claudegram`.
-
-Desde ese momento, a cualquier otro le dice que el bot es privado y no gasta ni
-un token de tu API.
 
 ### Con Docker
 
 ```bash
-cp .env.example .env && nano .env
+cp .env.example .env && nano .env    # token, clave y tu id
 docker compose up -d
 docker compose logs -f
 ```
@@ -198,7 +208,7 @@ actual. Tres cosas ayudan:
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements-dev.txt
-.venv/bin/python -m pytest          # 66 tests, sin tocar la red
+.venv/bin/python -m pytest          # 77 tests, sin tocar la red
 .venv/bin/python -m claudegram --check
 ```
 
