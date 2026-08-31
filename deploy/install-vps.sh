@@ -2,15 +2,14 @@
 # Instala el bot como servicio systemd en un VPS Debian/Ubuntu (AlphaVPS, Hetzner,
 # Contabo, lo que sea). Es idempotente: puedes volver a ejecutarlo para actualizar.
 #
-#   curl -fsSL https://raw.githubusercontent.com/andresgomezmoron-ai/Telegram-Code-Andres/main/deploy/install-vps.sh | sudo bash
+#   git clone https://github.com/andresgomezmoron-ai/Telegram-Code-Andres.git
+#   sudo bash Telegram-Code-Andres/deploy/install-vps.sh
 #
-# o, si ya has clonado el repo:
-#
-#   sudo bash deploy/install-vps.sh
+# Para instalar una rama concreta:  BRANCH=mi-rama sudo -E bash deploy/install-vps.sh
 set -euo pipefail
 
 REPO_URL="${REPO_URL:-https://github.com/andresgomezmoron-ai/Telegram-Code-Andres.git}"
-BRANCH="${BRANCH:-main}"
+BRANCH="${BRANCH:-}"   # vacío = la rama por defecto del repositorio
 DEST="${DEST:-/opt/claudegram}"
 SERVICE_USER="${SERVICE_USER:-claudegram}"
 
@@ -29,15 +28,18 @@ id -u "${SERVICE_USER}" >/dev/null 2>&1 || useradd --system --create-home --shel
 
 echo "==> Código en ${DEST}"
 if [[ -d "${DEST}/.git" ]]; then
-  git -C "${DEST}" fetch --quiet origin "${BRANCH}"
-  git -C "${DEST}" checkout --quiet "${BRANCH}"
-  git -C "${DEST}" reset --hard --quiet "origin/${BRANCH}"
+  git -C "${DEST}" fetch --quiet origin
+  TARGET="${BRANCH:-$(git -C "${DEST}" rev-parse --abbrev-ref HEAD)}"
+  git -C "${DEST}" checkout --quiet "${TARGET}"
+  git -C "${DEST}" reset --hard --quiet "origin/${TARGET}"
 elif [[ -f "$(dirname "$0")/../claudegram/__main__.py" ]]; then
   mkdir -p "${DEST}"
   tar -C "$(dirname "$0")/.." --exclude=./.venv --exclude=./.git --exclude=./state -cf - . \
     | tar -C "${DEST}" -xf -
-else
+elif [[ -n "${BRANCH}" ]]; then
   git clone --quiet --branch "${BRANCH}" "${REPO_URL}" "${DEST}"
+else
+  git clone --quiet "${REPO_URL}" "${DEST}"
 fi
 
 echo "==> Entorno virtual y dependencias"

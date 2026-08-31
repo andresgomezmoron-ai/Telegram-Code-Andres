@@ -44,10 +44,11 @@ ni nada que necesite internet abierto: si Telegram entra, Claude entra.
 
 ## Instalación en el VPS (Debian/Ubuntu)
 
-Con un solo comando:
+Entra por SSH a tu servidor y:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/andresgomezmoron-ai/Telegram-Code-Andres/main/deploy/install-vps.sh | sudo bash
+git clone https://github.com/andresgomezmoron-ai/Telegram-Code-Andres.git
+sudo bash Telegram-Code-Andres/deploy/install-vps.sh
 ```
 
 Instala en `/opt/claudegram`, crea un usuario de sistema sin shell, monta el
