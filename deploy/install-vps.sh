@@ -21,7 +21,9 @@ fi
 echo "==> Paquetes del sistema"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
-apt-get install -y -qq python3 python3-venv python3-pip git ca-certificates
+# Lo mínimo. No se instala python3-pip a nivel de sistema: el entorno virtual
+# trae el suyo, así que en una máquina compartida no se toca nada más.
+apt-get install -y -qq python3 python3-venv git ca-certificates
 
 echo "==> Usuario de servicio: ${SERVICE_USER}"
 id -u "${SERVICE_USER}" >/dev/null 2>&1 || useradd --system --create-home --shell /usr/sbin/nologin "${SERVICE_USER}"
@@ -44,6 +46,7 @@ fi
 
 echo "==> Entorno virtual y dependencias"
 [[ -d "${DEST}/.venv" ]] || python3 -m venv "${DEST}/.venv"
+[[ -x "${DEST}/.venv/bin/pip" ]] || "${DEST}/.venv/bin/python" -m ensurepip --upgrade
 "${DEST}/.venv/bin/pip" install --quiet --upgrade pip
 "${DEST}/.venv/bin/pip" install --quiet -r "${DEST}/requirements.txt"
 
