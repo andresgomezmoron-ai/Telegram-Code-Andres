@@ -176,16 +176,15 @@ def _ensure_owner(env_file: str, telegram: TelegramClient) -> bool:
             user_id = sender.get("id")
             if not user_id:
                 continue
-            # Acknowledge, so the bot does not answer this message later on.
-            try:
-                telegram.get_updates(offset, 0)
-            except TelegramError:
-                pass
+            # The message is deliberately left unconsumed: the bot picks it up
+            # when it starts and answers it, so the first thing you send does
+            # get a reply instead of vanishing into the setup.
             update_env_file(env_file, {"TELEGRAM_ALLOWED_USER_IDS": str(user_id)})
             os.environ["TELEGRAM_ALLOWED_USER_IDS"] = str(user_id)
             who = sender.get("username") or sender.get("first_name") or user_id
             print(f"\n✓ Autorizado: {who} (id {user_id})")
-            print("  A partir de ahora el bot solo te contesta a ti.")
+            print("  A partir de ahora el bot solo te contesta a ti,")
+            print("  y responderá a ese mensaje en cuanto arranque.")
             return True
 
     print("\n✗ No ha llegado ningún mensaje en 5 minutos.")

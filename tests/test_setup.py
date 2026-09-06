@@ -42,10 +42,10 @@ def test_pairing_learns_the_owner_id(tmp_path, monkeypatch):
     telegram = FakeTelegram()
     batches = [[{"update_id": 5, "message": {"from": {"id": 761234567, "username": "andres"},
                                              "chat": {"id": 761234567}, "text": "hola"}}]]
-    acknowledged = []
+    polls = []
 
     def get_updates(offset, timeout):
-        acknowledged.append(offset)
+        polls.append(offset)
         return batches.pop(0) if batches else []
 
     telegram.get_updates = get_updates
@@ -53,7 +53,8 @@ def test_pairing_learns_the_owner_id(tmp_path, monkeypatch):
     assert cli._ensure_owner(env, telegram) is True
     assert "TELEGRAM_ALLOWED_USER_IDS=761234567" in env.read_text(encoding="utf-8")
     assert os.environ["TELEGRAM_ALLOWED_USER_IDS"] == "761234567"
-    assert acknowledged[-1] == 6  # the pairing message is consumed, not answered later
+    # The pairing message is left unread on purpose: the bot answers it on start.
+    assert polls == [None]
 
 
 def test_pairing_explains_a_running_bot(tmp_path, capsys):
